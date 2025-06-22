@@ -1,41 +1,59 @@
-import streamlit as st
+from flask import Flask, render_template, request
 import pandas as pd
 import joblib
 
-# Load saved files
+app = Flask(__name__, template_folder='templates')
+
+# Load model, scaler, encoder
 model = joblib.load("models/cricket_model.pkl")
 scaler = joblib.load("models/scaler.pkl")
 le = joblib.load("models/label_encoder.pkl")
 
-# Load dataset for dummy structure
-raw_data = pd.read_csv("data/matches.csv")
-raw_data.dropna(inplace=True)
-raw_data = raw_data.drop(["id", "season", "city", "date", "player_of_match", "venue", "umpire1", "umpire2", "winner"], axis=1)
-data = pd.get_dummies(raw_data, drop_first=True)
+# Load structure from original data
+data = pd.read_csv("data/matches.csv")
+data.dropna(inplace=True)
+data.drop(["id", "Season", "city", "date", "player_of_match", "venue", "umpire1", "umpire2", "winner"], axis=1, inplace=True)
+base_columns = pd.get_dummies(data, drop_first=True).columns
 
-# App title
-st.title("🏏 IPL Match Winner Predictor")
+# Teams list
+teams = sorted({col.replace("team1_", "") for col in base_columns if "team1_" in col})
 
-# Dropdowns
-teams = sorted({col.replace("team1_", "") for col in data.columns if "team1_" in col})
-team1 = st.selectbox("Team 1", teams)
-team2 = st.selectbox("Team 2", teams)
-toss_winner = st.selectbox("Toss Winner", [team1, team2])
-toss_decision = st.selectbox("Toss Decision", ["field", "bat"])
-match_result = st.selectbox("Match Result Type", ["normal", "tie", "no result"])
+@app.route("/", methods=["GET"])
+def home():
+    return render_template("index.html")
 
-# Predict button
-if st.button("Predict Winner"):
-    input_dict = {col: 0 for col in data.columns}
-    input_dict[f"team1_{team1}"] = 1
-    input_dict[f"team2_{team2}"] = 1
-    input_dict[f"toss_winner_{toss_winner}"] = 1
-    input_dict[f"toss_decision_{toss_decision}"] = 1
-    input_dict[f"result_{match_result}"] = 1
+@app.route("/predict", methods=["POST"])
+def predict():
+    team1 = request.form.get("team1")
+    team2 = request.form.get("team2")
+    toss_winner_choice = request.form.get("toss_winner")
+    toss_decision = request.form.get("toss_decision")
 
-    input_df = pd.DataFrame([input_dict])
+    if toss_winner_choice == "team1":
+        toss_winner = team1
+    elif toss_winner_choice == "team2":
+        toss_winner = team2
+    else:
+        return render_template("index.html", error="Toss winner not selected properly")
+
+    result = "normal"  # Default assumption
+
+    # Create dummy input
+    input_data = {col: 0 for col in base_columns}
+    input_data[f"team1_{team1}"] = 1
+    input_data[f"team2_{team2}"] = 1
+    input_data[f"toss_winner_{toss_winner}"] = 1
+    input_data[f"toss_decision_{toss_decision}"] = 1
+    input_data[f"result_{result}"] = 1
+
+    # Convert to DataFrame
+    input_df = pd.DataFrame([input_data])
     scaled_input = scaler.transform(input_df)
-    pred = model.predict(scaled_input)
-    winner = le.inverse_transform(pred)[0]
 
-    st.success(f"🎉 Predicted Winner: winner")
+    prediction = model.predict(scaled_input)
+    winner = le.inverse_transform(prediction)[0]
+
+    return render_template("index.html", prediction=winner)
+
+if __name__ == "__main__":
+    app.run(debug=True)
