@@ -12,7 +12,7 @@ le = joblib.load("models/label_encoder.pkl")
 # Load structure from original data
 data = pd.read_csv("data/matches.csv")
 data.dropna(inplace=True)
-data.drop(["id", "Season", "city", "date", "player_of_match", "venue", "umpire1", "umpire2", "winner"], axis=1, inplace=True)
+data.drop(["id", "season", "city", "date", "player_of_match", "venue", "umpire1", "umpire2", "winner"], axis=1, inplace=True)
 base_columns = pd.get_dummies(data, drop_first=True).columns
 
 # Teams list
