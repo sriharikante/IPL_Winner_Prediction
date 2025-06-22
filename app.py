@@ -38,4 +38,4 @@ if st.button("Predict Winner"):
     pred = model.predict(scaled_input)
     winner = le.inverse_transform(pred)[0]
 
-    st.success(f"🎉 Predicted Winner: {winner}")
+    st.success(f"🎉 Predicted Winner: winner")
