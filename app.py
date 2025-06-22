@@ -10,7 +10,7 @@ le = joblib.load("models/label_encoder.pkl")
 # Load dataset for dummy structure
 raw_data = pd.read_csv("data/matches.csv")
 raw_data.dropna(inplace=True)
-raw_data = raw_data.drop(["id", "Season", "city", "date", "player_of_match", "venue", "umpire1", "umpire2", "winner"], axis=1)
+raw_data = raw_data.drop(["id", "season", "city", "date", "player_of_match", "venue", "umpire1", "umpire2", "winner"], axis=1)
 data = pd.get_dummies(raw_data, drop_first=True)
 
 # App title
