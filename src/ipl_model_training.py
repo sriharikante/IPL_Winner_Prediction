@@ -15,7 +15,7 @@ data.head()
 # Step 3: Data Pre-Processing & Feature selection 
 data = data.iloc[:, :-1]  # Remove the last column which seems unnecessary 
 data.dropna(inplace=True) 
-data.drop(["id", "Season", "city", "date", "player_of_match", "venue", "umpire1", "umpire2"], axis=1, inplace=True) 
+data.drop(["id", "season", "city", "date", "player_of_match", "venue", "umpire1", "umpire2"], axis=1, inplace=True) 
 
 X = data.drop(["winner"], axis=1) 
 y = data["winner"] 
@@ -85,3 +85,7 @@ plt.show()
 
 accuracy = accuracy_score(y_pred, y_test) 
 print(f'Accuracy of the model: {accuracy * 100:.2f}%')
+
+# Save model and scaler
+joblib.dump(model, "cricket_model.pkl")
+joblib.dump(sc, "scaler.pkl")
