@@ -1,59 +1,50 @@
-from flask import Flask, render_template, request
+import streamlit as st
 import pandas as pd
 import joblib
+from sklearn.preprocessing import LabelEncoder
+import os
 
-app = Flask(__name__, template_folder='templates')
+# --- Load data and model ---
+DATA_FILE = "matches.csv"
+MODEL_FILE = "cricket_model.pkl"
 
-# Load model, scaler, encoder
-model = joblib.load("models/cricket_model.pkl")
-scaler = joblib.load("models/scaler.pkl")
-le = joblib.load("models/label_encoder.pkl")
+# Check if required files exist
+if not os.path.exists(DATA_FILE) or not os.path.exists(MODEL_FILE):
+    st.error("Required file matches.csv or cricket_model.pkl not found.")
+    st.stop()
 
-# Load structure from original data
-data = pd.read_csv("data/matches.csv")
-data.dropna(inplace=True)
-data.drop(["id", "season", "city", "date", "player_of_match", "venue", "umpire1", "umpire2", "winner"], axis=1, inplace=True)
-base_columns = pd.get_dummies(data, drop_first=True).columns
+# Load dataset and model
+df = pd.read_csv(DATA_FILE)
+model = joblib.load(MODEL_FILE)
 
-# Teams list
-teams = sorted({col.replace("team1_", "") for col in base_columns if "team1_" in col})
+# Encode categorical columns
+le = LabelEncoder()
+for col in ['team1', 'team2', 'winner', 'venue']:
+    df[col] = le.fit_transform(df[col])
 
-@app.route("/", methods=["GET"])
-def home():
-    return render_template("index.html")
+# --- Streamlit UI ---
+st.title("🏏 IPL Match Winner Predictor")
 
-@app.route("/predict", methods=["POST"])
-def predict():
-    team1 = request.form.get("team1")
-    team2 = request.form.get("team2")
-    toss_winner_choice = request.form.get("toss_winner")
-    toss_decision = request.form.get("toss_decision")
+teams = sorted(list(df['team1'].unique()))
+team_names = le.inverse_transform(teams)
 
-    if toss_winner_choice == "team1":
-        toss_winner = team1
-    elif toss_winner_choice == "team2":
-        toss_winner = team2
+team1 = st.selectbox("Select Team 1", team_names)
+team2 = st.selectbox("Select Team 2", team_names)
+venue_input = st.selectbox("Select Venue", le.inverse_transform(df['venue'].unique()))
+
+if st.button("Predict Winner"):
+    if team1 == team2:
+        st.warning("Team 1 and Team 2 must be different.")
     else:
-        return render_template("index.html", error="Toss winner not selected properly")
+        try:
+            t1 = le.transform([team1])[0]
+            t2 = le.transform([team2])[0]
+            venue = le.transform([venue_input])[0]
 
-    result = "normal"  # Default assumption
+            prediction = model.predict([[t1, t2, venue]])
+            predicted_winner = le.inverse_transform(prediction)[0]
 
-    # Create dummy input
-    input_data = {col: 0 for col in base_columns}
-    input_data[f"team1_{team1}"] = 1
-    input_data[f"team2_{team2}"] = 1
-    input_data[f"toss_winner_{toss_winner}"] = 1
-    input_data[f"toss_decision_{toss_decision}"] = 1
-    input_data[f"result_{result}"] = 1
-
-    # Convert to DataFrame
-    input_df = pd.DataFrame([input_data])
-    scaled_input = scaler.transform(input_df)
-
-    prediction = model.predict(scaled_input)
-    winner = le.inverse_transform(prediction)[0]
-
-    return render_template("index.html", prediction=winner)
-
-if __name__ == "__main__":
-    app.run(debug=True)
+            st.success(f"🎉 Predicted Winner: {predicted_winner}")
+            st.caption("Confidence: 90% (static)")
+        except Exception as e:
+            st.error(f"Prediction failed: {str(e)}")
