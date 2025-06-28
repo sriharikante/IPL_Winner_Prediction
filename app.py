@@ -1,42 +1,35 @@
+# app.py
 import streamlit as st
-import pandas as pd
 import pickle
+import numpy as np
 
-# Load models
-model = pickle.load(open("cricket_model.pkl", "rb"))
-label_encoder = pickle.load(open("label_encoder.pkl", "rb"))
-scaler = pickle.load(open("scaler.pkl", "rb"))
+# Load saved model and encoders
+model = pickle.load(open("models/cricket_model.pkl", "rb"))
+label_encoder = pickle.load(open("models/label_encoder.pkl", "rb"))
+scaler = pickle.load(open("models/scaler.pkl", "rb"))
 
-# Define inputs
-teams = [
-    'Mumbai Indians', 'Chennai Super Kings', 'Royal Challengers Bangalore',
-    'Gujarat Titans', 'Rajasthan Royals', 'Kolkata Knight Riders',
-    'Sunrisers Hyderabad', 'Lucknow Super Giants', 'Punjab Kings', 'Delhi Capitals'
-]
-
-venues = ['Mumbai', 'Chennai', 'Bangalore', 'Kolkata', 'Delhi', 'Ahmedabad']
-toss_decisions = ['bat', 'field']
-
-st.set_page_config(page_title="IPL Match Predictor", page_icon="🏏")
 st.title("🏏 IPL Match Winner Predictor")
 
-team1 = st.selectbox("Select Team 1", teams)
-team2 = st.selectbox("Select Team 2", [t for t in teams if t != team1])
-venue = st.selectbox("Select Venue", venues)
-toss_winner = st.selectbox("Toss Won By", [team1, team2])
-toss_decision = st.selectbox("Toss Decision", toss_decisions)
+teams = ['Mumbai Indians', 'Chennai Super Kings', 'Royal Challengers Bangalore', 'Gujarat Titans',
+         'Rajasthan Royals', 'Kolkata Knight Riders', 'Sunrisers Hyderabad', 'Lucknow Super Giants',
+         'Punjab Kings', 'Delhi Capitals']
 
-def predict_winner(team1, team2, toss_winner, venue, toss_decision):
-    input_df = pd.DataFrame([[team1, team2, toss_winner, venue, toss_decision]],
-                            columns=['team1', 'team2', 'toss_winner', 'venue', 'toss_decision'])
+venue = ['Mumbai', 'Chennai', 'Bangalore', 'Kolkata', 'Delhi', 'Ahmedabad']
 
-    for col in input_df.columns:
-        input_df[col] = label_encoder.transform(input_df[col])
-
-    input_scaled = scaler.transform(input_df)
-    prediction = model.predict(input_scaled)
-    return label_encoder.inverse_transform(prediction)[0]
+t1 = st.selectbox("Select Team 1", teams)
+t2 = st.selectbox("Select Team 2", [team for team in teams if team != t1])
+ven = st.selectbox("Select Venue", venue)
+toss_winner = st.selectbox("Who won the toss?", [t1, t2])
+toss_decision = st.selectbox("Toss Decision", ['bat', 'field'])
 
 if st.button("Predict Winner"):
-    winner = predict_winner(team1, team2, toss_winner, venue, toss_decision)
-    st.success(f"🏆 Predicted Winner: {winner}")
+    try:
+        input_data = [t1, t2, toss_winner, ven, toss_decision]
+        input_encoded = label_encoder.transform(input_data)
+        input_scaled = scaler.transform([input_encoded])
+        pred = model.predict(input_scaled)
+        winner = label_encoder.inverse_transform(pred)
+        st.success(f"🏆 Predicted Winner: {winner[0]}")
+    except Exception as e:
+        st.error("Prediction failed. Ensure all options are valid.")
+        st.exception(e)
