@@ -23,6 +23,7 @@ for col in ['team1', 'team2', 'winner', 'venue']:
     df[col] = le.fit_transform(df[col])
 
 # --- Streamlit UI ---
+st.set_page_config(page_title="IPL Match Predictor", layout="centered")
 st.title("🏏 IPL Match Winner Predictor")
 
 teams = sorted(list(df['team1'].unique()))
@@ -34,7 +35,7 @@ venue_input = st.selectbox("Select Venue", le.inverse_transform(df['venue'].uniq
 
 if st.button("Predict Winner"):
     if team1 == team2:
-        st.warning("Team 1 and Team 2 must be different.")
+        st.warning("⚠️ Team 1 and Team 2 must be different.")
     else:
         try:
             t1 = le.transform([team1])[0]
@@ -44,7 +45,13 @@ if st.button("Predict Winner"):
             prediction = model.predict([[t1, t2, venue]])
             predicted_winner = le.inverse_transform(prediction)[0]
 
-            st.success(f"🎉 Predicted Winner: {predicted_winner}")
-            st.caption("Confidence: 90% (static)")
+            st.markdown(f"""
+                <div style='background-color: #e6ffe6; padding: 20px; border-radius: 12px; text-align: center'>
+                    <h3 style='color: green; font-family: Arial;'>🎉 Predicted Winner:</h3>
+                    <h1 style='color: #2e86de; font-family: Courier New;'>{predicted_winner}</h1>
+                    <p style='color: gray;'>Confidence: <b>90%</b> (static)</p>
+                </div>
+            """, unsafe_allow_html=True)
+
         except Exception as e:
             st.error(f"Prediction failed: {str(e)}")
