@@ -5,7 +5,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier 
 from sklearn.metrics import accuracy_score 
 import joblib
-import pickle
 
 print("Starting training process...")
 
@@ -13,39 +12,41 @@ print("Starting training process...")
 data = pd.read_csv("matches.csv") 
 print(f"Dataset loaded: {data.shape}")
 
-# Data preprocessing - EXACT same steps every time
-data_clean = data.copy()
-data_clean = data_clean.iloc[:, :-1]  # Remove last column
-data_clean.dropna(inplace=True) 
-data_clean.drop(["id", "season", "city", "date", "player_of_match", "venue", "umpire1", "umpire2"], axis=1, inplace=True)
+# Select only the features we need + target
+columns_needed = ['team1', 'team2', 'venue', 'toss_winner', 'toss_decision', 'winner']
+data_clean = data[columns_needed].copy()
 
+# Remove rows with missing values
+data_clean.dropna(inplace=True)
 print(f"After cleaning: {data_clean.shape}")
-print("Columns:", data_clean.columns.tolist())
 
 # Separate features and target
-X = data_clean.drop(["winner"], axis=1) 
-y = data_clean["winner"]
+feature_cols = ['team1', 'team2', 'venue', 'toss_winner', 'toss_decision']
+X = data_clean[feature_cols].copy()
+y = data_clean['winner'].copy()
 
-print("Unique values in each column:")
-for col in X.columns:
-    print(f"{col}: {sorted(X[col].unique())}")
+print("Unique values in each feature:")
+for col in feature_cols:
+    print(f"{col}: {len(X[col].unique())} unique values")
+    print(f"  Sample values: {sorted(X[col].unique())[:5]}")
 
-# Create and save all encoders BEFORE any transformations
+# Create and save encoders for each feature
 encoders = {}
-for col in X.columns:
-    if X[col].dtype == 'object':
-        encoders[col] = LabelEncoder()
-        X[col] = encoders[col].fit_transform(X[col])
-        print(f"Encoded {col}: {len(encoders[col].classes_)} unique values")
+X_encoded = X.copy()
 
-# Target encoder
+for col in feature_cols:
+    encoders[col] = LabelEncoder()
+    X_encoded[col] = encoders[col].fit_transform(X[col])
+    print(f"Encoded {col}: {encoders[col].classes_[:5]}...")
+
+# Encode target
 target_encoder = LabelEncoder()
 y_encoded = target_encoder.fit_transform(y)
 print(f"Target classes: {target_encoder.classes_}")
 
 # Split the data
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y_encoded, test_size=0.2, random_state=42, stratify=y_encoded
+    X_encoded, y_encoded, test_size=0.2, random_state=42, stratify=y_encoded
 )
 
 # Scale the features
@@ -60,54 +61,52 @@ model.fit(X_train_scaled, y_train)
 # Evaluate
 y_pred = model.predict(X_test_scaled)
 accuracy = accuracy_score(y_test, y_pred)
-print(f'Model Accuracy: {accuracy * 100:.2f}%')
+print(f'\nModel Accuracy: {accuracy * 100:.2f}%')
 
-# Save everything we need for predictions
+# Feature importance
+feature_importance = pd.DataFrame({
+    'feature': feature_cols,
+    'importance': model.feature_importances_
+}).sort_values('importance', ascending=False)
+print("\nFeature Importance:")
+print(feature_importance)
+
+# Save everything
 print("\nSaving model and preprocessing objects...")
 
-# Save the trained model
 joblib.dump(model, "cricket_model.pkl")
-print("✓ Model saved")
-
-# Save the scaler
 joblib.dump(scaler, "scaler.pkl")
-print("✓ Scaler saved")
-
-# Save target encoder
 joblib.dump(target_encoder, "target_encoder.pkl")
-print("✓ Target encoder saved")
-
-# Save all feature encoders
 joblib.dump(encoders, "feature_encoders.pkl")
-print("✓ Feature encoders saved")
+joblib.dump(feature_cols, "feature_columns.pkl")
 
-# Save feature columns order
-feature_columns = X.columns.tolist()
-joblib.dump(feature_columns, "feature_columns.pkl")
-print("✓ Feature columns saved")
-
-# Save a sample of processed data for reference
-sample_data = {
-    'feature_columns': feature_columns,
+# Save model info
+model_info = {
+    'feature_columns': feature_cols,
     'target_classes': target_encoder.classes_.tolist(),
-    'feature_encoders_classes': {col: enc.classes_.tolist() for col, enc in encoders.items()}
+    'feature_classes': {col: encoders[col].classes_.tolist() for col in feature_cols},
+    'accuracy': accuracy
 }
-with open('model_info.pkl', 'wb') as f:
-    pickle.dump(sample_data, f)
-print("✓ Model info saved")
+joblib.dump(model_info, "model_info.pkl")
 
-# Test the saved model to make sure it works
-print("\nTesting saved model...")
-loaded_model = joblib.load("cricket_model.pkl")
-loaded_scaler = joblib.load("scaler.pkl")
-test_pred = loaded_model.predict(loaded_scaler.transform(X_test[:1]))
-print(f"Test prediction: {target_encoder.inverse_transform(test_pred)[0]}")
-
-print("\n✅ Training completed successfully!")
+print("✅ Training completed successfully!")
 print("Files created:")
-print("- cricket_model.pkl")
-print("- scaler.pkl") 
-print("- target_encoder.pkl")
-print("- feature_encoders.pkl")
-print("- feature_columns.pkl")
-print("- model_info.pkl")
+for file in ["cricket_model.pkl", "scaler.pkl", "target_encoder.pkl", "feature_encoders.pkl", "feature_columns.pkl", "model_info.pkl"]:
+    print(f"- {file}")
+
+# Test prediction consistency
+print("\n🧪 Testing prediction consistency...")
+test_input = X_encoded.iloc[0:1]  # First row
+test_scaled = scaler.transform(test_input)
+
+predictions = []
+for i in range(5):
+    pred = model.predict(test_scaled)[0]
+    pred_winner = target_encoder.inverse_transform([pred])[0]
+    predictions.append(pred_winner)
+
+print(f"Same input 5 times: {predictions}")
+if len(set(predictions)) == 1:
+    print("✅ Model gives consistent predictions!")
+else:
+    print("❌ Model predictions are inconsistent!")
