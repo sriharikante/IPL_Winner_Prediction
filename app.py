@@ -5,232 +5,142 @@ import numpy as np
 import os
 from sklearn.preprocessing import LabelEncoder
 
-# Configure page
-st.set_page_config(
-    page_title="🏏 IPL Match Predictor",
-    page_icon="🏏",
-    layout="centered",
-    initial_sidebar_state="collapsed"
-)
+# --- Load data and model ---
+DATA_FILE = "matches.csv"  
+MODEL_FILE = "cricket_model.pkl"
+SCALER_FILE = "scaler.pkl"
 
-# Custom CSS
-st.markdown("""
-<style>
-    .main-header {
-        text-align: center;
-        color: #1f77b4;
-        font-size: 3rem;
-        font-weight: bold;
-        margin-bottom: 2rem;
-    }
-    .team-vs {
-        text-align: center;
-        font-size: 2rem;
-        color: #ff6b35;
-        font-weight: bold;
-        margin: 1rem 0;
-    }
-    .prediction-box {
-        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-        padding: 1.5rem;
-        border-radius: 10px;
-        color: white;
-        text-align: center;
-        margin: 1rem 0;
-    }
-    .confidence-box {
-        background: #f0f2f6;
-        padding: 1rem;
-        border-radius: 5px;
-        margin: 0.5rem 0;
-    }
-</style>
-""", unsafe_allow_html=True)
+# Check if required files exist
+if not os.path.exists(DATA_FILE) or not os.path.exists(MODEL_FILE) or not os.path.exists(SCALER_FILE):
+    st.error("Required files not found. Make sure matches.csv, cricket_model.pkl, and scaler.pkl are present.")
+    st.stop()
 
-# --- Load required files ---
-@st.cache_resource
-def load_model_files():
-    """Load all model files with error handling"""
-    required_files = {
-        "model": "cricket_model.pkl",
-        "scaler": "scaler.pkl", 
-        "label_encoder": "label_encoder.pkl",
-        "feature_columns": "feature_columns.pkl",
-        "sample_data": "sample_data.pkl"
-    }
+@st.cache_data
+def load_and_prepare_data():
+    """Load and prepare data exactly like training"""
+    # Load dataset
+    df = pd.read_csv(DATA_FILE)
     
-    # Check if files exist
-    missing_files = [file for file in required_files.values() if not os.path.exists(file)]
-    if missing_files:
-        st.error(f"❌ Missing files: {', '.join(missing_files)}")
-        st.error("Please run the training script first to generate all required files.")
-        st.stop()
+    # Apply exact same preprocessing as training
+    df_processed = df.copy()
+    df_processed = df_processed.iloc[:, :-1]  # Remove last column
+    df_processed.dropna(inplace=True)
+    df_processed.drop(["id", "season", "city", "date", "player_of_match", "venue", "umpire1", "umpire2"], axis=1, inplace=True)
     
-    # Load files
-    try:
-        loaded_files = {}
-        for key, filename in required_files.items():
-            loaded_files[key] = joblib.load(filename)
-        return loaded_files
-    except Exception as e:
-        st.error(f"❌ Error loading model files: {str(e)}")
-        st.stop()
+    # Get unique values for dropdowns
+    teams = sorted(list(set(df_processed['team1'].unique()) | set(df_processed['team2'].unique())))
+    toss_decisions = sorted(df_processed['toss_decision'].unique())
+    results = sorted(df_processed['result'].unique())
+    
+    # Create the feature structure (exactly like training)
+    X = df_processed.drop(["winner"], axis=1)
+    X_encoded = pd.get_dummies(X, columns=["team1", "team2", "toss_winner", "toss_decision", "result"], drop_first=True)
+    
+    # Create label encoder for target
+    le = LabelEncoder()
+    le.fit(df_processed['winner'])
+    
+    return teams, toss_decisions, results, X_encoded.columns.tolist(), le
 
-# Load all files
-files = load_model_files()
-model = files["model"]
-scaler = files["scaler"]
-label_encoder = files["label_encoder"]
-feature_columns = files["feature_columns"]
-sample_data = files["sample_data"]
+# Load data and get options
+teams, toss_decisions, results, expected_features, label_encoder = load_and_prepare_data()
+
+# Load model and scaler
+model = joblib.load(MODEL_FILE)
+scaler = joblib.load(SCALER_FILE)
 
 # --- Streamlit UI ---
-st.markdown('<h1 class="main-header">🏏 IPL Match Winner Predictor</h1>', unsafe_allow_html=True)
+st.title("🏏 IPL Match Winner Predictor")
 
-# Create columns for team selection
-col1, col2, col3 = st.columns([1, 0.3, 1])
+col1, col2 = st.columns(2)
 
 with col1:
-    st.subheader("Team 1")
-    team1 = st.selectbox("Select Team 1", sample_data['teams'], key="team1")
+    team1 = st.selectbox("Select Team 1", teams)
 
 with col2:
-    st.markdown('<div class="team-vs">VS</div>', unsafe_allow_html=True)
+    team2 = st.selectbox("Select Team 2", teams)
 
-with col3:
-    st.subheader("Team 2")
-    team2 = st.selectbox("Select Team 2", sample_data['teams'], key="team2")
+# Make toss winner dependent on selected teams
+if team1 and team2:
+    toss_winner = st.selectbox("Select Toss Winner", [team1, team2])
+else:
+    toss_winner = st.selectbox("Select Toss Winner", ["Select teams first"], disabled=True)
 
-# Additional parameters
-st.subheader("Match Details")
+toss_decision = st.selectbox("Select Toss Decision", toss_decisions)  
+result = st.selectbox("Select Result Type", results)
 
-col4, col5 = st.columns(2)
-with col4:
-    venue = st.selectbox("🏟️ Venue", sample_data['venues'])
-    toss_decision = st.selectbox("🪙 Toss Decision", sample_data['toss_decisions'])
-
-with col5:
-    # Toss winner should be one of the selected teams
-    if team1 and team2:
-        toss_winner = st.selectbox("🏆 Toss Winner", [team1, team2])
-    else:
-        toss_winner = st.selectbox("🏆 Toss Winner", ["Select teams first"])
-    
-    result_type = st.selectbox("📊 Result Type", sample_data['result_types'])
-
-# Prediction button
-if st.button("🎯 Predict Winner", type="primary", use_container_width=True):
+if st.button("Predict Winner"):
     if team1 == team2:
-        st.warning("⚠️ Please select different teams!")
-    elif not all([team1, team2, venue, toss_winner, toss_decision, result_type]):
-        st.warning("⚠️ Please fill all fields!")
+        st.warning("Team 1 and Team 2 must be different.")
+    elif not all([team1, team2, toss_winner, toss_decision, result]):
+        st.warning("Please fill all fields.")
     else:
         try:
-            with st.spinner("🔮 Analyzing match conditions..."):
-                # Create input dataframe matching training format
-                input_data = pd.DataFrame({
-                    'team1': [team1],
-                    'team2': [team2],
-                    'venue': [venue],
-                    'toss_winner': [toss_winner],
-                    'toss_decision': [toss_decision],
-                    'result': [result_type]
-                })
+            # Create input dataframe exactly like training
+            input_data = pd.DataFrame({
+                'team1': [team1],
+                'team2': [team2], 
+                'toss_winner': [toss_winner],
+                'toss_decision': [toss_decision],
+                'result': [result]
+            })
+            
+            # Apply same get_dummies transformation as training
+            input_encoded = pd.get_dummies(input_data, columns=["team1", "team2", "toss_winner", "toss_decision", "result"], drop_first=True)
+            
+            # Create a dataframe with all expected features (initialized to 0)
+            prediction_input = pd.DataFrame(0, index=[0], columns=expected_features)
+            
+            # Fill in the values for columns that exist in our input
+            for col in input_encoded.columns:
+                if col in prediction_input.columns:
+                    prediction_input[col] = input_encoded[col].values[0]
+            
+            # Scale the input
+            input_scaled = scaler.transform(prediction_input)
+            
+            # Make prediction
+            prediction = model.predict(input_scaled)
+            prediction_proba = model.predict_proba(input_scaled)
+            
+            # Decode prediction
+            predicted_winner = label_encoder.inverse_transform(prediction)[0]
+            confidence = np.max(prediction_proba) * 100
+            
+            st.success(f"🎉 Predicted Winner: **{predicted_winner}**")
+            st.info(f"🎯 Confidence: **{confidence:.1f}%**")
+            
+            # Show feature analysis
+            with st.expander("🔍 Prediction Details"):
+                st.write(f"**Input Features Used:** {len(expected_features)} features")
+                st.write(f"**Teams:** {team1} vs {team2}")
+                st.write(f"**Toss:** {toss_winner} won and chose to {toss_decision}")
+                st.write(f"**Expected Result Type:** {result}")
                 
-                # Apply same preprocessing as training
-                input_encoded = pd.get_dummies(
-                    input_data, 
-                    columns=['team1', 'team2', 'venue', 'toss_winner', 'toss_decision', 'result'], 
-                    drop_first=True
-                )
-                
-                # Align columns with training data
-                for col in feature_columns:
-                    if col not in input_encoded.columns:
-                        input_encoded[col] = 0
-                
-                # Reorder columns to match training
-                input_encoded = input_encoded.reindex(columns=feature_columns, fill_value=0)
-                
-                # Scale the input
-                input_scaled = scaler.transform(input_encoded)
-                
-                # Make prediction
-                prediction = model.predict(input_scaled)
-                prediction_proba = model.predict_proba(input_scaled)
-                
-                # Get winner name
-                predicted_winner = label_encoder.inverse_transform(prediction)[0]
-                confidence = np.max(prediction_proba) * 100
-                
-                # Display results
-                st.markdown(
-                    f'<div class="prediction-box">'
-                    f'<h2>🏆 Predicted Winner</h2>'
-                    f'<h1>{predicted_winner}</h1>'
-                    f'</div>', 
-                    unsafe_allow_html=True
-                )
-                
-                col_conf1, col_conf2 = st.columns(2)
-                with col_conf1:
-                    st.markdown(
-                        f'<div class="confidence-box">'
-                        f'<h4>🎯 Confidence</h4>'
-                        f'<h3>{confidence:.1f}%</h3>'
-                        f'</div>', 
-                        unsafe_allow_html=True
-                    )
-                
-                with col_conf2:
-                    st.markdown(
-                        f'<div class="confidence-box">'
-                        f'<h4>🏟️ Venue Advantage</h4>'
-                        f'<p>{venue}</p>'
-                        f'</div>', 
-                        unsafe_allow_html=True
-                    )
-                
-                # Show prediction probabilities for all teams
-                with st.expander("📊 Detailed Probabilities"):
-                    prob_df = pd.DataFrame({
-                        'Team': label_encoder.classes_,
-                        'Win Probability': prediction_proba[0] * 100
-                    }).sort_values('Win Probability', ascending=False)
-                    
-                    st.dataframe(prob_df, use_container_width=True)
-                
+                # Show which features were active
+                active_features = [col for col in input_encoded.columns if input_encoded[col].values[0] == 1]
+                if active_features:
+                    st.write(f"**Active Features:** {', '.join(active_features)}")
+            
         except Exception as e:
-            st.error(f"❌ Prediction failed: {str(e)}")
-            st.error("Please check if the model was trained properly.")
+            st.error(f"Error making prediction: {str(e)}")
+            st.error("Please check that your model files are compatible.")
+            
+            # Debug info
+            with st.expander("Debug Information"):
+                st.write(f"Expected features: {len(expected_features)}")
+                st.write(f"Model expects: {model.n_features_in_} features")
+                st.write(f"Error details: {str(e)}")
 
-# Footer
-st.markdown("---")
-st.markdown(
-    """
-    <div style='text-align: center; color: #666;'>
-        <p>🏏 IPL Match Predictor | Built with Machine Learning</p>
-        <p>Accuracy based on historical match data and team performance</p>
-    </div>
-    """, 
-    unsafe_allow_html=True
-)
-
-# Sidebar with information
+# Show model info
 with st.sidebar:
-    st.header("ℹ️ About")
-    st.write("""
-    This app predicts IPL match winners using machine learning.
+    st.header("📊 Model Information")
+    st.write(f"**Teams Available:** {len(teams)}")
+    st.write(f"**Toss Decisions:** {len(toss_decisions)}")
+    st.write(f"**Result Types:** {len(results)}")
+    st.write(f"**Model Features:** {len(expected_features)}")
     
-    **Features considered:**
-    - Team strength and form
-    - Venue conditions
-    - Toss advantage
-    - Historical performance
-    
-    **Model:** Random Forest Classifier
-    """)
-    
-    if st.button("🔄 Refresh Model"):
-        st.cache_resource.clear()
-        st.rerun()
+    if st.button("Show All Features"):
+        st.write("**All Model Features:**")
+        for i, feature in enumerate(expected_features, 1):
+            st.write(f"{i}. {feature}")
