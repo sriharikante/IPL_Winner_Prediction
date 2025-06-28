@@ -3,9 +3,9 @@ import pandas as pd
 import pickle
 
 # Load models
-model = pickle.load(open("models/cricket_model.pkl", "rb"))
-label_encoder = pickle.load(open("models/label_encoder.pkl", "rb"))
-scaler = pickle.load(open("models/scaler.pkl", "rb"))
+model = pickle.load(open("cricket_model.pkl", "rb"))
+label_encoder = pickle.load(open("label_encoder.pkl", "rb"))
+scaler = pickle.load(open("scaler.pkl", "rb"))
 
 # Define inputs
 teams = [
