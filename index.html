@@ -2,16 +2,15 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>🏏 IPL Match Winner Predictor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
   <style>
     body {
       font-family: 'Poppins', sans-serif;
-      margin: 0;
-      padding: 0;
       background: #f3f4f6;
-      color: #333;
+      padding: 0;
+      margin: 0;
     }
 
     header {
@@ -21,7 +20,6 @@
       text-align: center;
       font-size: 24px;
       font-weight: 600;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
 
     .container {
@@ -30,7 +28,7 @@
       margin: 40px auto;
       padding: 30px;
       border-radius: 12px;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
     }
 
     label {
@@ -47,12 +45,6 @@
       border-radius: 6px;
       border: 1px solid #ccc;
       outline: none;
-      transition: 0.3s;
-    }
-
-    select:focus {
-      border-color: #3b82f6;
-      box-shadow: 0 0 5px rgba(59, 130, 246, 0.3);
     }
 
     button {
@@ -65,7 +57,6 @@
       border-radius: 6px;
       cursor: pointer;
       margin-top: 30px;
-      transition: 0.3s ease;
       font-weight: 600;
     }
 
@@ -80,18 +71,25 @@
       font-weight: bold;
       color: #16a34a;
     }
+
+    .note {
+      text-align: center;
+      margin-top: 30px;
+      color: #999;
+      font-size: 13px;
+    }
   </style>
 </head>
 <body>
 
   <header>
-    🏏 IPL Match Winner Predictor
+    🏏 IPL Match Winner Predictor (Demo UI)
   </header>
 
   <div class="container">
     <form id="predictForm">
-      <label for="team1">Select Team 1</label>
-      <select id="team1" required>
+      <label for="team1">Team 1</label>
+      <select id="team1">
         <option>Mumbai Indians</option>
         <option>Chennai Super Kings</option>
         <option>Royal Challengers Bangalore</option>
@@ -104,8 +102,8 @@
         <option>Delhi Capitals</option>
       </select>
 
-      <label for="team2">Select Team 2</label>
-      <select id="team2" required>
+      <label for="team2">Team 2</label>
+      <select id="team2">
         <option>Chennai Super Kings</option>
         <option>Royal Challengers Bangalore</option>
         <option>Gujarat Titans</option>
@@ -118,8 +116,8 @@
         <option>Mumbai Indians</option>
       </select>
 
-      <label for="venue">Select Venue</label>
-      <select id="venue" required>
+      <label for="venue">Venue</label>
+      <select id="venue">
         <option>Mumbai</option>
         <option>Chennai</option>
         <option>Bangalore</option>
@@ -129,13 +127,13 @@
       </select>
 
       <label for="toss_winner">Toss Won By</label>
-      <select id="toss_winner" required>
+      <select id="toss_winner">
         <option>Team 1</option>
         <option>Team 2</option>
       </select>
 
       <label for="toss_decision">Toss Decision</label>
-      <select id="toss_decision" required>
+      <select id="toss_decision">
         <option>bat</option>
         <option>field</option>
       </select>
@@ -144,29 +142,28 @@
     </form>
 
     <div id="result"></div>
+
+    <div class="note">
+      This is a frontend demo only. For real predictions, use the Streamlit app.
+    </div>
   </div>
 
   <script>
     const form = document.getElementById("predictForm");
     const resultDiv = document.getElementById("result");
 
-    form.addEventListener("submit", async function (e) {
+    form.addEventListener("submit", function (e) {
       e.preventDefault();
 
       const team1 = document.getElementById("team1").value;
       const team2 = document.getElementById("team2").value;
-      const venue = document.getElementById("venue").value;
-      const toss_decision = document.getElementById("toss_decision").value;
-      const toss_winner = document.getElementById("toss_winner").value === "Team 1" ? team1 : team2;
 
-      resultDiv.innerHTML = "🔄 Predicting...";
+      resultDiv.innerHTML = "🔄 Predicting (demo)...";
 
-      // Placeholder for real API call
-      // Replace this with fetch('/predict', {method: POST, body: ...}) when backend is ready
       setTimeout(() => {
         const mockWinner = Math.random() > 0.5 ? team1 : team2;
-        resultDiv.innerHTML = `🏆 Predicted Winner: <span style="color:#3b82f6">${mockWinner}</span>`;
-      }, 1200);
+        resultDiv.innerHTML = `🏆 Predicted Winner (demo): <span style="color:#3b82f6">${mockWinner}</span>`;
+      }, 1000);
     });
   </script>
 </body>
