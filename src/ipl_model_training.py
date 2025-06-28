@@ -29,13 +29,13 @@ model = RandomForestClassifier()
 model.fit(X_train, y_train)
 
 # Save model, encoder, scaler
-with open("models/cricket_model.pkl", "wb") as f:
+with open("cricket_model.pkl", "wb") as f:
     pickle.dump(model, f)
 
-with open("models/label_encoder.pkl", "wb") as f:
+with open("label_encoder.pkl", "wb") as f:
     pickle.dump(le, f)
 
-with open("models/scaler.pkl", "wb") as f:
+with open("scaler.pkl", "wb") as f:
     pickle.dump(scaler, f)
 
 print("✅ Model, LabelEncoder, and Scaler saved.")
