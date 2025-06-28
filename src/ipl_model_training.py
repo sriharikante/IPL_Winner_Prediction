@@ -7,15 +7,17 @@ import pickle
 import os
 
 # Load the dataset
-df = pd.read_csv("/content/matches.csv")
+df = pd.read_csv("matches.csv")
 
 # Drop rows with missing important values
 df.dropna(subset=['team1', 'team2', 'toss_winner', 'venue', 'toss_decision', 'winner'], inplace=True)
 
-# Encode categorical columns
-le = LabelEncoder()
+# Encode categorical columns with separate LabelEncoders
+encoders = {}
 for col in ['team1', 'team2', 'toss_winner', 'venue', 'toss_decision', 'winner']:
+    le = LabelEncoder()
     df[col] = le.fit_transform(df[col])
+    encoders[col] = le
 
 # Select features and target
 X = df[['team1', 'team2', 'toss_winner', 'venue', 'toss_decision']]
@@ -33,9 +35,8 @@ model.fit(X_train, y_train)
 # Save model files
 os.makedirs("models", exist_ok=True)
 pickle.dump(model, open("models/cricket_model.pkl", "wb"))
-pickle.dump(le, open("models/label_encoder.pkl", "wb"))
+pickle.dump(encoders, open("models/encoders.pkl", "wb"))
 pickle.dump(scaler, open("models/scaler.pkl", "wb"))
 
 print("Model training and saving complete.")
-
 
