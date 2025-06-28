@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IPL Match Predictor</title>
+    <title>🏏 IPL Match Winner Predictor</title>
     <style>
         * {
             margin: 0;
@@ -12,59 +12,68 @@
         }
 
         body {
-            font-family: Arial, sans-serif;
-            background: #f5f5f5;
-            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
 
         .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            overflow: hidden;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 700px;
+            width: 100%;
+            animation: slideUp 0.8s ease-out;
         }
 
-        .header {
-            background: #2196F3;
-            color: white;
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
             text-align: center;
-            padding: 30px 20px;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
         }
 
-        .header h1 {
-            font-size: 2rem;
-            margin-bottom: 10px;
+        .cricket-emoji {
+            font-size: 3em;
+            display: block;
+            text-align: center;
+            margin-bottom: 20px;
+            animation: bounce 2s infinite;
         }
 
-        .form-container {
-            padding: 30px;
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
+            }
         }
 
         .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #333;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 16px;
-        }
-
-        .form-control:focus {
-            outline: none;
-            border-color: #2196F3;
+            margin-bottom: 25px;
         }
 
         .form-row {
@@ -73,42 +82,115 @@
             gap: 20px;
         }
 
+        .team-selection {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 20px;
+            align-items: end;
+            margin-bottom: 30px;
+        }
+
+        .vs-separator {
+            text-align: center;
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+            margin: 20px 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+            font-size: 1.1em;
+        }
+
+        select, button {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            transform: translateY(-2px);
+        }
+
         .predict-btn {
-            background: #4CAF50;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            padding: 15px 30px;
-            font-size: 16px;
-            border-radius: 5px;
+            font-weight: 600;
+            font-size: 18px;
             cursor: pointer;
-            display: block;
-            margin: 20px auto;
-            width: 200px;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         .predict-btn:hover {
-            background: #45a049;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .predict-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .predict-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
         }
 
         .result {
-            display: none;
-            background: #e8f5e8;
-            border: 1px solid #4CAF50;
-            border-radius: 5px;
+            margin-top: 30px;
             padding: 20px;
+            border-radius: 12px;
             text-align: center;
-            margin-top: 20px;
+            font-size: 1.2em;
+            font-weight: 600;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
         }
 
         .result.show {
-            display: block;
+            opacity: 1;
+            transform: translateY(0);
         }
 
-        .winner {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #4CAF50;
-            margin: 10px 0;
+        .success {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            box-shadow: 0 10px 25px rgba(76, 175, 80, 0.3);
+        }
+
+        .error {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+            box-shadow: 0 10px 25px rgba(244, 67, 54, 0.3);
+        }
+
+        .confidence {
+            margin-top: 10px;
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .venue-info {
+            margin-top: 5px;
+            font-size: 0.8em;
+            opacity: 0.8;
         }
 
         .loading {
@@ -118,13 +200,13 @@
         }
 
         .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #2196F3;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
             border-radius: 50%;
-            width: 30px;
-            height: 30px;
+            width: 40px;
+            height: 40px;
             animation: spin 1s linear infinite;
-            margin: 0 auto 10px;
+            margin: 0 auto;
         }
 
         @keyframes spin {
@@ -132,173 +214,143 @@
             100% { transform: rotate(360deg); }
         }
 
-        @media (max-width: 600px) {
-            .form-row {
-                grid-template-columns: 1fr;
+        @media (max-width: 768px) {
+            .container {
+                padding: 30px 20px;
+                margin: 10px;
             }
             
-            .header h1 {
-                font-size: 1.5rem;
+            h1 {
+                font-size: 2em;
+            }
+            
+            .team-selection {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .vs-separator {
+                order: -1;
+                margin: 10px 0;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 10px;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>🏏 IPL Match Predictor</h1>
-            <p>Predict the winner of your IPL match</p>
-        </div>
-
-        <div class="form-container">
-            <form id="predictForm">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="team1">Team 1</label>
-                        <select class="form-control" id="team1" required>
-                            <option value="">Select Team 1</option>
-                            <option value="Mumbai Indians">Mumbai Indians</option>
-                            <option value="Chennai Super Kings">Chennai Super Kings</option>
-                            <option value="Royal Challengers Bangalore">Royal Challengers Bangalore</option>
-                            <option value="Kolkata Knight Riders">Kolkata Knight Riders</option>
-                            <option value="Delhi Capitals">Delhi Capitals</option>
-                            <option value="Punjab Kings">Punjab Kings</option>
-                            <option value="Rajasthan Royals">Rajasthan Royals</option>
-                            <option value="Sunrisers Hyderabad">Sunrisers Hyderabad</option>
-                            <option value="Gujarat Titans">Gujarat Titans</option>
-                            <option value="Lucknow Super Giants">Lucknow Super Giants</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="team2">Team 2</label>
-                        <select class="form-control" id="team2" required>
-                            <option value="">Select Team 2</option>
-                            <option value="Mumbai Indians">Mumbai Indians</option>
-                            <option value="Chennai Super Kings">Chennai Super Kings</option>
-                            <option value="Royal Challengers Bangalore">Royal Challengers Bangalore</option>
-                            <option value="Kolkata Knight Riders">Kolkata Knight Riders</option>
-                            <option value="Delhi Capitals">Delhi Capitals</option>
-                            <option value="Punjab Kings">Punjab Kings</option>
-                            <option value="Rajasthan Royals">Rajasthan Royals</option>
-                            <option value="Sunrisers Hyderabad">Sunrisers Hyderabad</option>
-                            <option value="Gujarat Titans">Gujarat Titans</option>
-                            <option value="Lucknow Super Giants">Lucknow Super Giants</option>
-                        </select>
-                    </div>
-                </div>
-
+        <div class="cricket-emoji">🏏</div>
+        <h1>IPL Match Winner Predictor</h1>
+        
+        <form id="predictionForm">
+            <div class="team-selection">
                 <div class="form-group">
-                    <label for="venue">Venue</label>
-                    <select class="form-control" id="venue" required>
-                        <option value="">Select Venue</option>
-                        <option value="Wankhede Stadium, Mumbai">Wankhede Stadium, Mumbai</option>
-                        <option value="M. A. Chidambaram Stadium, Chennai">M. A. Chidambaram Stadium, Chennai</option>
-                        <option value="M. Chinnaswamy Stadium, Bengaluru">M. Chinnaswamy Stadium, Bengaluru</option>
-                        <option value="Eden Gardens, Kolkata">Eden Gardens, Kolkata</option>
-                        <option value="Arun Jaitley Stadium, Delhi">Arun Jaitley Stadium, Delhi</option>
-                        <option value="Punjab Cricket Association IS Bindra Stadium, Mohali">PCA Stadium, Mohali</option>
-                        <option value="Sawai Mansingh Stadium, Jaipur">Sawai Mansingh Stadium, Jaipur</option>
-                        <option value="Rajiv Gandhi International Stadium, Hyderabad">Rajiv Gandhi International Stadium, Hyderabad</option>
-                        <option value="Narendra Modi Stadium, Ahmedabad">Narendra Modi Stadium, Ahmedabad</option>
-                        <option value="Bharat Ratna Shri Atal Bihari Vajpayee Ekana Cricket Stadium, Lucknow">Ekana Cricket Stadium, Lucknow</option>
-                        <option value="Dr. DY Patil Sports Academy, Mumbai">Dr. DY Patil Sports Academy, Mumbai</option>
-                        <option value="Brabourne Stadium, Mumbai">Brabourne Stadium, Mumbai</option>
-                        <option value="Maharashtra Cricket Association Stadium, Pune">MCA Stadium, Pune</option>
-                        <option value="Holkar Cricket Stadium, Indore">Holkar Cricket Stadium, Indore</option>
-                        <option value="Green Park, Kanpur">Green Park, Kanpur</option>
-                        <option value="Barsapara Cricket Stadium, Guwahati">Barsapara Cricket Stadium, Guwahati</option>
-                        <option value="JSCA International Stadium Complex, Ranchi">JSCA Stadium, Ranchi</option>
-                        <option value="Sheikh Zayed Stadium, Abu Dhabi">Sheikh Zayed Stadium, Abu Dhabi</option>
-                        <option value="Dubai International Cricket Stadium">Dubai International Cricket Stadium</option>
-                        <option value="Sharjah Cricket Stadium">Sharjah Cricket Stadium</option>
+                    <label for="team1">Team 1</label>
+                    <select id="team1" required>
+                        <option value="">Select Team 1</option>
+                        <option value="Chennai Super Kings">Chennai Super Kings</option>
+                        <option value="Delhi Capitals">Delhi Capitals</option>
+                        <option value="Gujarat Titans">Gujarat Titans</option>
+                        <option value="Kolkata Knight Riders">Kolkata Knight Riders</option>
+                        <option value="Lucknow Super Giants">Lucknow Super Giants</option>
+                        <option value="Mumbai Indians">Mumbai Indians</option>
+                        <option value="Punjab Kings">Punjab Kings</option>
+                        <option value="Rajasthan Royals">Rajasthan Royals</option>
+                        <option value="Royal Challengers Bangalore">Royal Challengers Bangalore</option>
+                        <option value="Sunrisers Hyderabad">Sunrisers Hyderabad</option>
+                    </select>
+                </div>
+                
+                <div class="vs-separator">VS</div>
+                
+                <div class="form-group">
+                    <label for="team2">Team 2</label>
+                    <select id="team2" required>
+                        <option value="">Select Team 2</option>
+                        <option value="Chennai Super Kings">Chennai Super Kings</option>
+                        <option value="Delhi Capitals">Delhi Capitals</option>
+                        <option value="Gujarat Titans">Gujarat Titans</option>
+                        <option value="Kolkata Knight Riders">Kolkata Knight Riders</option>
+                        <option value="Lucknow Super Giants">Lucknow Super Giants</option>
+                        <option value="Mumbai Indians">Mumbai Indians</option>
+                        <option value="Punjab Kings">Punjab Kings</option>
+                        <option value="Rajasthan Royals">Rajasthan Royals</option>
+                        <option value="Royal Challengers Bangalore">Royal Challengers Bangalore</option>
+                        <option value="Sunrisers Hyderabad">Sunrisers Hyderabad</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="venue">🏟️ Venue</label>
+                <select id="venue" required>
+                    <option value="">Select Venue</option>
+                    <option value="Wankhede Stadium">Wankhede Stadium, Mumbai</option>
+                    <option value="M. A. Chidambaram Stadium">M. A. Chidambaram Stadium, Chennai</option>
+                    <option value="Eden Gardens">Eden Gardens, Kolkata</option>
+                    <option value="M. Chinnaswamy Stadium">M. Chinnaswamy Stadium, Bangalore</option>
+                    <option value="Rajiv Gandhi Intl. Cricket Stadium">Rajiv Gandhi Intl. Cricket Stadium, Hyderabad</option>
+                    <option value="Sawai Mansingh Stadium">Sawai Mansingh Stadium, Jaipur</option>
+                    <option value="Feroz Shah Kotla">Feroz Shah Kotla, Delhi</option>
+                    <option value="Punjab Cricket Association Stadium">Punjab Cricket Association Stadium, Mohali</option>
+                    <option value="Narendra Modi Stadium">Narendra Modi Stadium, Ahmedabad</option>
+                    <option value="Brabourne Stadium">Brabourne Stadium, Mumbai</option>
+                    <option value="Arun Jaitley Stadium">Arun Jaitley Stadium, Delhi</option>
+                    <option value="Dr. Y.S. Rajasekhara Reddy ACA-VDCA Cricket Stadium">Dr. Y.S. Rajasekhara Reddy ACA-VDCA Cricket Stadium, Visakhapatnam</option>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="toss_winner">🏆 Toss Winner</label>
+                    <select id="toss_winner" required>
+                        <option value="">Select Toss Winner</option>
                     </select>
                 </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="toss_winner">Toss Winner</label>
-                        <select class="form-control" id="toss_winner" required>
-                            <option value="">Select Toss Winner</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="toss_decision">Toss Decision</label>
-                        <select class="form-control" id="toss_decision" required>
-                            <option value="">Select Decision</option>
-                            <option value="bat">Bat First</option>
-                            <option value="field">Field First</option>
-                        </select>
-                    </div>
+                <div class="form-group">
+                    <label for="toss_decision">🪙 Toss Decision</label>
+                    <select id="toss_decision" required>
+                        <option value="">Select Toss Decision</option>
+                        <option value="bat">Bat First</option>
+                        <option value="field">Field First</option>
+                    </select>
                 </div>
+            </div>
 
-                <button type="submit" class="predict-btn">🔮 Predict Winner</button>
+            <div class="form-group">
+                <label for="result_type">📊 Match Result Type</label>
+                <select id="result_type" required>
+                    <option value="">Select Result Type</option>
+                    <option value="normal">Normal Finish</option>
+                    <option value="tie">Tie/Super Over</option>
+                    <option value="no result">No Result</option>
+                </select>
+            </div>
 
-                <div class="loading" id="loading">
-                    <div class="spinner"></div>
-                    <p>Predicting winner...</p>
-                </div>
+            <button type="submit" class="predict-btn" id="predictBtn">
+                🎯 Predict Winner
+            </button>
+        </form>
 
-                <div class="result" id="result">
-                    <h3>🏆 Prediction Result</h3>
-                    <div class="winner" id="winner-text"></div>
-                    <p id="confidence-text"></p>
-                </div>
-            </form>
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Analyzing match conditions...</p>
         </div>
+
+        <div class="result" id="result"></div>
     </div>
 
     <script>
-        const teams = ['team1', 'team2'];
-        
-        // Update toss winner options when teams are selected
-        function updateTossOptions() {
-            const team1 = document.getElementById('team1').value;
-            const team2 = document.getElementById('team2').value;
-            const tossWinner = document.getElementById('toss_winner');
-            
-            tossWinner.innerHTML = '<option value="">Select Toss Winner</option>';
-            
-            if (team1) {
-                tossWinner.innerHTML += `<option value="team1">${team1}</option>`;
-            }
-            if (team2) {
-                tossWinner.innerHTML += `<option value="team2">${team2}</option>`;
-            }
-        }
+        const form = document.getElementById('predictionForm');
+        const resultDiv = document.getElementById('result');
+        const loadingDiv = document.getElementById('loading');
+        const predictBtn = document.getElementById('predictBtn');
 
-        document.getElementById('team1').addEventListener('change', updateTossOptions);
-        document.getElementById('team2').addEventListener('change', updateTossOptions);
-
-        document.getElementById('predictForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const team1 = document.getElementById('team1').value;
-            const team2 = document.getElementById('team2').value;
-            
-            if (team1 === team2) {
-                alert('Please select different teams!');
-                return;
-            }
-            
-            // Show loading
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('result').classList.remove('show');
-            
-            // Simulate prediction
-            setTimeout(() => {
-                const teams = [team1, team2];
-                const winner = teams[Math.floor(Math.random() * teams.length)];
-                const confidence = Math.floor(Math.random() * 30) + 65; // 65-95%
-                
-                document.getElementById('winner-text').textContent = winner;
-                document.getElementById('confidence-text').textContent = `Confidence: ${confidence}%`;
-                
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('result').classList.add('show');
-            }, 1500);
-        });
-    </script>
-</body>
-</html>
+        // Enhanced team statistics including venue performance
+        const teamStats = {
+            'Chennai Super Kings
