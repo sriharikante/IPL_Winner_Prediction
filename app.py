@@ -3,7 +3,7 @@ import pandas as pd
 import pickle
 
 # Load models
-model = pickle.load(open("cricket_model.pkl", "rb"))
+model = pickle.load(open("cricket_model.pkl(1)", "rb"))
 label_encoder = pickle.load(open("label_encoder.pkl", "rb"))
 scaler = pickle.load(open("scaler.pkl", "rb"))
 
